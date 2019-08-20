@@ -77,42 +77,42 @@ def compute_layer_style_cost(a_S, a_G):
 
 
 def compute_style_cost(model, STYLE_LAYERS):
-    """
-    Computes the overall style cost from several chosen layers
-    
-    Arguments:
-    model -- our tensorflow model
-    STYLE_LAYERS -- A python list containing:
-                        - the names of the layers we would like to extract style from
-                        - a coefficient for each of them
-    
-    Returns: 
-    J_style -- tensor representing a scalar value, style cost defined above by equation (2)
-    """
-    
-    # initialize the overall style cost
-    J_style = 0
+	"""
+	Computes the overall style cost from several chosen layers
 
-    for layer_name, coeff in STYLE_LAYERS:
+	Arguments:
+	model -- our tensorflow model
+	STYLE_LAYERS -- A python list containing:
+	                    - the names of the layers we would like to extract style from
+	                    - a coefficient for each of them
 
-        # Select the output tensor of the currently selected layer
-        out = model[layer_name]
+	Returns: 
+	J_style -- tensor representing a scalar value, style cost defined above by equation (2)
+	"""
 
-        # Set a_S to be the hidden layer activation from the layer we have selected, by running the session on out
-        a_S = sess.run(out)
+	# initialize the overall style cost
+	J_style = 0
 
-        # Set a_G to be the hidden layer activation from same layer. Here, a_G references model[layer_name] 
-        # and isn't evaluated yet. Later in the code, we'll assign the image G as the model input, so that
-        # when we run the session, this will be the activations drawn from the appropriate layer, with G as input.
-        a_G = out
-        
-        # Compute style_cost for the current layer
-        J_style_layer = compute_layer_style_cost(a_S, a_G)
+	for layer_name, coeff in STYLE_LAYERS:
 
-        # Add coeff * J_style_layer of this layer to overall style cost
-        J_style += coeff * J_style_layer
+		# Select the output tensor of the currently selected layer
+		out = model[layer_name]
 
-    return J_style
+		# Set a_S to be the hidden layer activation from the layer we have selected, by running the session on out
+		a_S = sess.run(out)
+
+		# Set a_G to be the hidden layer activation from same layer. Here, a_G references model[layer_name] 
+		# and isn't evaluated yet. Later in the code, we'll assign the image G as the model input, so that
+		# when we run the session, this will be the activations drawn from the appropriate layer, with G as input.
+		a_G = out
+
+		# Compute style_cost for the current layer
+		J_style_layer = compute_layer_style_cost(a_S, a_G)
+
+		# Add coeff * J_style_layer of this layer to overall style cost
+		J_style += coeff * J_style_layer
+
+	return J_style
 
 
 def total_cost(J_content, J_style, alpha = 10, beta = 40):
@@ -134,44 +134,99 @@ def total_cost(J_content, J_style, alpha = 10, beta = 40):
     return J
 
 
+# def compute_J_list(sess, model, content_image, style_image):
+# 	"""
+# 	Make a list with J components
+
+# 	Arguments:
+# 	model -- our tensorflow model
+
+# 	Returns:
+# 	J -- total cost.
+# 	J_content -- content cost coded above
+# 	J_style -- style cost coded above
+# 	"""
+
+# 	# Define Style Weight
+# 	STYLE_LAYERS = [
+#     ('conv1_1', 0.2),
+#     ('conv2_1', 0.2),
+#     ('conv3_1', 0.2),
+#     ('conv4_1', 0.2),
+#     ('conv5_1', 0.2)]
+
+# 	# Assign the content image to be the input of the VGG model.  
+# 	sess.run(model['input'].assign(content_image))
+
+# 	# Select the output tensor of layer conv4_2
+# 	out = model['conv4_2']
+
+# 	# Set a_C to be the hidden layer activation from the layer we have selected
+# 	a_C = sess.run(out)
+
+# 	# Set a_G to be the hidden layer activation from same layer. Here, a_G references model['conv4_2'] 
+# 	# and isn't evaluated yet. Later in the code, we'll assign the image G as the model input, so that
+# 	# when we run the session, this will be the activations drawn from the appropriate layer, with G as input.
+# 	a_G = out
+
+# 	# Compute the content cost
+# 	J_content = compute_content_cost(a_C, a_G)
+
+# 	# Assign the input of the model to be the "style" image 
+# 	sess.run(model['input'].assign(style_image))
+
+# 	# Compute the style cost
+# 	J_style = compute_style_cost(sess, model, STYLE_LAYERS)
+
+# 	# Now that you have J_content and J_style, compute the total cost J by calling total_cost().
+# 	J = total_cost(J_content, J_style, alpha = 10, beta = 40)
+
+# 	# Make a list with J components
+# 	J_list = [J, J_content, J_style]
+
+# 	return J_list
+
+
 def model_nn(sess, input_image, num_iterations = 200):
-    
-    # Initialize global variables (you need to run the session on the initializer)
-    sess.run(tf.global_variables_initializer())
-    
-    # Run the noisy input image (initial generated image) through the model. Use assign().
-    generated_image = sess.run(model['input'].assign(input_image))
-    
-    for i in range(num_iterations):
-    
-        # Run the session on the train_step to minimize the total cost
-        sess.run(train_step)
-        
-        # Compute the generated image by running the session on the current model['input']
-        generated_image = sess.run(model['input'])
 
-        # Print every 20 iteration.
-        if i % 20 == 0:
-            Jt, Jc, Js = sess.run([J, J_content, J_style])
-            print("Iteration " + str(i) + " :")
-            print("total cost = " + str(Jt))
-            print("content cost = " + str(Jc))
-            print("style cost = " + str(Js))
-            
-            # save current generated image in the "/output" directory
-            save_image("output/" + str(i) + ".png", generated_image)
-    
-    # save last generated image
-    save_image('output/generated_image.jpg', generated_image)
-    
-    return generated_image
+	# Initialize global variables (you need to run the session on the initializer)
+	sess.run(tf.global_variables_initializer())
 
+	# Run the noisy input image (initial generated image) through the model. Use assign().
+	generated_image = sess.run(model['input'].assign(input_image))
 
+	for i in range(num_iterations):
+
+		# Run the session on the train_step to minimize the total cost
+		sess.run(train_step)
+
+		# Compute the generated image by running the session on the current model['input']
+		generated_image = sess.run(model['input'])
+
+		# Print every 20 iteration.
+		if i%20 == 0:
+			Jt, Jc, Js = sess.run([J, J_content, J_style])
+			print("Iteration " + str(i) + " :")
+			print("total cost = " + str(Jt))
+			print("content cost = " + str(Jc))
+			print("style cost = " + str(Js))
+
+			# save current generated image in the "/output" directory
+			save_image("output/" + str(i) + ".png", generated_image)
+
+	# save last generated image
+	save_image('output/generated_image.jpg', generated_image)
+
+	return generated_image
+
+"""
 def main():
+
+	
+	### TEST PART ###
 
 	# In our running example, the content image C will be the picture of the Louvre Museum in Paris.
 	# J_content = 6.76559
-
 	content_image = cv.imread("images/louvre.jpg")
 	imshow(content_image)
 
@@ -224,7 +279,7 @@ def main():
 		J_style = np.random.randn()
 		J = total_cost(J_content, J_style)
 		print("J = " + str(J))
-
+	
 
 	### RUNNING PART ###
 
@@ -245,42 +300,70 @@ def main():
 
 	model = load_vgg_model("pretrained-model/imagenet-vgg-verydeep-19.mat")
 
-	# Assign the content image to be the input of the VGG model.  
-	sess.run(model['input'].assign(content_image))
-
-	# Select the output tensor of layer conv4_2
-	out = model['conv4_2']
-
-	# Set a_C to be the hidden layer activation from the layer we have selected
-	a_C = sess.run(out)
-
-	# Set a_G to be the hidden layer activation from same layer. Here, a_G references model['conv4_2'] 
-	# and isn't evaluated yet. Later in the code, we'll assign the image G as the model input, so that
-	# when we run the session, this will be the activations drawn from the appropriate layer, with G as input.
-	a_G = out
-
-	# Compute the content cost
-	J_content = compute_content_cost(a_C, a_G)
-
-	# Assign the input of the model to be the "style" image 
-	sess.run(model['input'].assign(style_image))
-
-	# Compute the style cost
-	J_style = compute_style_cost(model, STYLE_LAYERS)
-
-	# Now that you have J_content and J_style, compute the total cost J by calling total_cost().
-	J = total_cost(J_content, J_style, alpha = 10, beta = 40)
-
-	# define optimizer
-	optimizer = tf.train.AdamOptimizer(2.0)
-
-	# define train_step
-	train_step = optimizer.minimize(J)
+	J_list = compute_J_list(sess, model, content_image, style_image)
 
 	# Run the following cell to generate an artistic image.
-	model_nn(sess, generated_image)
-
-
+	model_nn(sess, model, J_list, generated_image)
 
 if __name__ == '__main__':
 	main()
+"""
+
+# Define Style Weight
+STYLE_LAYERS = [
+('conv1_1', 0.2),
+('conv2_1', 0.2),
+('conv3_1', 0.2),
+('conv4_1', 0.2),
+('conv5_1', 0.2)]
+
+# Reset the graph
+tf.reset_default_graph()
+
+# Start interactive session
+sess = tf.InteractiveSession()
+
+content_image = scipy.misc.imread("images/louvre_small.jpg")
+content_image = reshape_and_normalize_image(content_image)
+
+style_image = scipy.misc.imread("images/monet.jpg")
+style_image = reshape_and_normalize_image(style_image)
+
+generated_image = generate_noise_image(content_image)
+imshow(generated_image[0])
+
+model = load_vgg_model("pretrained-model/imagenet-vgg-verydeep-19.mat")
+
+# Assign the content image to be the input of the VGG model.  
+sess.run(model['input'].assign(content_image))
+
+# Select the output tensor of layer conv4_2
+out = model['conv4_2']
+
+# Set a_C to be the hidden layer activation from the layer we have selected
+a_C = sess.run(out)
+
+# Set a_G to be the hidden layer activation from same layer. Here, a_G references model['conv4_2'] 
+# and isn't evaluated yet. Later in the code, we'll assign the image G as the model input, so that
+# when we run the session, this will be the activations drawn from the appropriate layer, with G as input.
+a_G = out
+
+# Compute the content cost
+J_content = compute_content_cost(a_C, a_G)
+
+# Assign the input of the model to be the "style" image 
+sess.run(model['input'].assign(style_image))
+
+# Compute the style cost
+J_style = compute_style_cost(model, STYLE_LAYERS)
+
+J = total_cost(J_content, J_style)
+
+# define optimizer (1 line)
+optimizer = tf.train.AdamOptimizer(2.0)
+
+# define train_step (1 line)
+train_step = optimizer.minimize(J)
+
+
+model_nn(sess, generated_image)
